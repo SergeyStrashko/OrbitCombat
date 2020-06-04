@@ -5,6 +5,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import processing.core.*;
@@ -27,9 +29,103 @@ import java.io.BufferedReader;
 import java.io.PrintWriter; 
 import java.io.InputStream; 
 import java.io.OutputStream; 
-import java.io.IOException; 
+import java.io.IOException;
+import java.util.stream.Collectors;
 
 public class OrbitCombat extends PApplet {
+    private PApplet                 processing      = this;
+
+    private Arena                   arena;
+    private Ship                    ship;
+    private Ship                    target;
+
+    private Bullet                  bulletNew;
+
+    private int                     backgroundColor = 152;
+
+    private boolean                 shooting        = false;
+
+    private Context                 context;
+    private SensorManager           manager;
+    private Sensor sensor;
+    private AccelerometerListener   listener;
+
+    private int                     port            = 6868;
+    private String                  address         = "192.168.1.100";
+    private InetAddress             serverAddress   = null;
+    private Socket                  socket;
+
+    private JSONObject              shipInfo        = new JSONObject();
+
+    public void settings() {  fullScreen(); }
+
+    public void setup() {
+        arena       = new Arena(processing);
+        ship        = new Ship(processing, arena.x, arena.y + arena.R, arena.R, 255);
+        target      = new Ship(processing, arena.x, arena.y - arena.R, arena.R, 0);
+
+        context     = getActivity();
+        manager     = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+        sensor      = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        listener    = new AccelerometerListener();
+        manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME);
+
+        showWaitingLabel();
+        setUpConnectionToServer();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void draw() {
+        new DataExchanger().run();
+        new Drawer().run();
+
+        arena.show();
+        ship.show();
+        target.show();
+    }
+
+    private void showWaitingLabel() {
+        background(backgroundColor);
+
+        textAlign(CENTER, CENTER);
+        textSize((float) (width*0.2));
+        text("Waiting...", width/2, height/2);
+    }
+
+    private void setUpConnectionToServer() {
+        try {
+            serverAddress   = InetAddress.getByName(address);
+            socket          = new Socket(serverAddress, port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void touchStarted() {
+        shooting = true;
+    }
+
+    public void touchEnded() {
+        shooting = false;
+    }
+
+    public void onResume() {
+        super.onResume();
+        if (manager != null) {
+            manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME);
+        }
+    }
+
+    public void onPause() {
+        super.onPause();
+        if (manager != null) {
+            manager.unregisterListener(listener);
+        }
+    }
+
     class DataExchanger extends Thread {
         public void run() {
             try {
@@ -68,9 +164,8 @@ public class OrbitCombat extends PApplet {
 
                 bullets = json.getJSONArray("bullets");
 
-                ArrayList<Bullet> tB = new ArrayList<>();
                 for (int i = 0; i < bullets.size(); i++) {
-                    target.bullets.add(new Bullet(-bullets.getJSONObject(i).getFloat("x"), -bullets.getJSONObject(i).getFloat("y")));
+                    target.bullets.add(new Bullet(processing, -bullets.getJSONObject(i).getFloat("x"), -bullets.getJSONObject(i).getFloat("y"), arena.R));
                 }
 
                 ship.health = json.getInt("health");
@@ -83,272 +178,24 @@ public class OrbitCombat extends PApplet {
     }
 
     class Drawer extends Thread {
+        @RequiresApi(api = Build.VERSION_CODES.N)
         public void run() {
             background(backgroundColor);
             translate(width/2, height/2);
 
-            ArrayList<Bullet> shipBullets = ship.bullets;
-            ArrayList<Bullet> targetBullets = target.bullets;
+            ship.bullets = ship.bullets.stream().filter(bullet -> !target.checkHit(target.x, target.y, bullet.x, bullet.y)).collect(Collectors.toCollection(ArrayList::new));
 
-            for (int i = 0; i < shipBullets.size(); i++) {
-                if(target.checkHit(target.x, target.y, shipBullets.get(i).x, shipBullets.get(i).y)) ship.bullets.remove(i);
-            }
-
-            for (int i = 0; i < targetBullets.size(); i++) {
-                if(ship.checkHit(ship.x, ship.y, targetBullets.get(i).x, targetBullets.get(i).y)) target.bullets.remove(i);
-            }
+            target.bullets = target.bullets.stream().filter(bullet -> !ship.checkHit(ship.x, ship.y, bullet.x, bullet.y)).collect(Collectors.toCollection(ArrayList::new));
 
             arena.setScore(target.health);
 
             if (shooting) {
-                ship.shoot();
+                bulletNew = ship.shoot();
                 shooting = false;
             }
 
-            if (ax >= 0.5) ship.move(2);
-            if (ax <= -0.5) ship.move(-2);
+            if (listener.getOffsetX() >= 0.5)   ship.move(2);
+            if (listener.getOffsetX() <= -0.5)  ship.move(-2);
         }
     }
-
-    Arena arena;
-    Ship ship;
-    Ship target;
-
-    Bullet bulletNew;
-
-    int backgroundColor = 152;
-
-    boolean shooting = false;
-
-    Context context;
-    SensorManager manager;
-    Sensor sensor;
-    AccelerometerListener listener;
-    float ax, ay, az;
-
-    int port = 6868;
-
-    JSONObject shipInfo = new JSONObject();
-    JSONObject opponentInfo = new JSONObject();
-
-    InetAddress serverAddress = null;
-    Socket socket;
-
-    class AccelerometerListener implements SensorEventListener {
-        public void onSensorChanged(SensorEvent event) {
-            ax = event.values[0];
-            ay = event.values[1];
-            az = event.values[2];
-        }
-        public void onAccuracyChanged(Sensor sensor, int accuracy) { }
-    }
-
-    public void onResume() {
-        super.onResume();
-        if (manager != null) {
-            manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME);
-        }
-    }
-
-    public void onPause() {
-        super.onPause();
-        if (manager != null) {
-            manager.unregisterListener(listener);
-        }
-    }
-
-    public void setup() {
-        background(backgroundColor);
-
-        arena = new Arena();
-        ship = new Ship(arena.x, arena.y + arena.R, arena.R, 255);
-        target = new Ship(arena.x, arena.y - arena.R, arena.R, 0);
-
-        context = getActivity();
-        manager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-        sensor = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        listener = new AccelerometerListener();
-        manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME);
-
-        try {
-            textAlign(CENTER, CENTER);
-            textSize((float) (width*0.2));
-            text("Waiting...", width/2, height/2);
-
-            serverAddress = InetAddress.getByName("192.168.1.100");
-            socket = new Socket(serverAddress, port);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void draw() {
-        new DataExchanger().run();
-        new Drawer().run();
-
-        arena.show();
-        ship.show();
-        target.show();
-    }
-
-    public void touchStarted() {
-        shooting = true;
-        bulletNew = new Bullet(ship.x, ship.y);
-    }
-
-    public void touchEnded() {
-        shooting = false;
-    }
-
-    class Arena {
-        public float x;
-        public float y;
-        public float D;
-        public float R;
-
-        Arena() {
-            this.x = 0;
-            this.y = 0;
-
-            this.D = (float) ((x >= y) ? height/2 * 0.85f : width/2 * 0.85f);
-            this.R = D/2;
-        }
-
-        public void show() {
-            stroke(0);
-            strokeWeight(4);
-            noFill();
-            circle(x, y ,D);
-        }
-
-        public void setScore(int score) {
-            textAlign(PConstants.CENTER, PConstants.CENTER);
-            fill(255);
-            textSize(this.R/2);
-            text(score, 0, 0);
-        }
-    }
-
-    class Bullet {
-        public float x;
-        public float y;
-
-        private float speedX;
-        private float speedY;
-
-        private float bulletSpeed = 20;
-
-        Bullet(float x, float y) {
-            this.x = x;
-            this.y = y;
-
-            this.speedX = (-this.x)/bulletSpeed;
-            this.speedY = (-this.y)/bulletSpeed;
-        }
-
-        public void show() {
-            strokeWeight(1);
-            circle(this.x, this.y, (float) (arena.R*0.05f));
-
-            this.x += this.speedX;
-            this.y += this.speedY;
-        }
-
-        public boolean checkSelfDestruct() {
-            if (this.x < -width/2 || this.x > width/2 || this.y < -height/2 || this.y > height) {
-                return true;
-            }
-            return false;
-        }
-    }
-
-    class Ship {
-        public float x;
-        public float y;
-        private float R;
-        private int shipSize;
-        public boolean defeted = false;
-
-        private int baseColor;
-        public int colorTemp;
-
-        private int barrierHeight = 100;
-        public int health = 100;
-        private int maxBulletsCount = 5;
-
-        public ArrayList<Bullet> bullets = new ArrayList<Bullet>();
-
-        Ship(float x, float y, float R, int c) {
-            this.x = x;
-            this.y = y;
-            this.R = R;
-
-            this.shipSize = (int) (R*0.25f);
-
-            this.colorTemp = c;
-            this.baseColor = this.colorTemp;
-
-            if (y < 0) this.barrierHeight = -100;
-        }
-
-        public void show() {
-            fill(colorTemp);
-            this.colorTemp = this.baseColor;
-
-            noStroke();
-            circle(x, y, this.shipSize);
-
-            for (Bullet bullet : bullets) {
-                bullet.show();
-            }
-
-            for (int i = 0; i < bullets.size(); i++) {
-                if (bullets.get(i).checkSelfDestruct()) bullets.remove(i);
-            }
-        }
-
-        public void move(int direction) {
-            double angle = Math.toRadians(direction);
-
-            float tempX = -x;
-            float tempY = -y;
-
-            this.x = (float)(tempX * Math.cos(angle) - tempY * Math.sin(angle));
-            this.y = (float)(tempY * Math.cos(angle) + tempX * Math.sin(angle));
-
-            this.x *= -1;
-            this.y *= -1;
-
-            double distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-            if (R - distance > 1) {
-                this.y += R - distance;
-            }
-
-            if ((this.y <= barrierHeight) && (this.y > 0) || (this.y >= barrierHeight) && (this.y < 0))
-            {
-                this.y = -tempY;
-                this.x = -tempX;
-            }
-        }
-
-        public void shoot() {
-            if (bullets.size() < maxBulletsCount)
-                bullets.add(new Bullet(this.x, this.y));
-        }
-
-        public boolean checkHit(float tX, float tY, float bX, float bY) {
-            if ((bX - tX)*(bX - tX) + (bY - tY)*(bY - tY) < (this.shipSize/2)*(this.shipSize/2)) {
-                if (this.health > 0) this.health--;
-                else this.defeted = true;
-
-                this.colorTemp = (this.baseColor == 255) ? 0 : 255;
-                return true;
-            }
-            return false;
-        }
-    }
-
-    public void settings() {  fullScreen(); }
 }
