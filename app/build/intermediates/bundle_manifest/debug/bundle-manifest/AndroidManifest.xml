@@ -8,6 +8,8 @@
         android:minSdkVersion="17"
         android:targetSdkVersion="28" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:appComponentFactory="android.support.v4.app.CoreComponentFactory"
         android:debuggable="true"

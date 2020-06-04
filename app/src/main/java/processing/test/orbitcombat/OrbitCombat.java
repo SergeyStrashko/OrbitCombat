@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 import processing.core.*;
 import processing.data.*; 
@@ -29,9 +30,91 @@ import java.io.OutputStream;
 import java.io.IOException; 
 
 public class OrbitCombat extends PApplet {
+    class DataExchanger extends Thread {
+        public void run() {
+            try {
+                OutputStream output = socket.getOutputStream();
+                PrintWriter writer = new PrintWriter(output, true);
+
+                shipInfo.put("x", ship.x);
+                shipInfo.put("y", ship.y);
+                shipInfo.put("health", ship.health);
+
+                JSONArray bullets = new JSONArray();
+
+                if (bulletNew != null) {
+                    JSONObject bj = new JSONObject();
+                    bj.put("x", bulletNew.x);
+                    bj.put("y", bulletNew.y);
+                    bullets.append(bj);
+                    bulletNew = null;
+                }
+
+                shipInfo.put("bullets", bullets);
+
+                String s = shipInfo.toString().replaceAll("\\n", "");
+
+                writer.println(s);
+
+                InputStream input = socket.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+
+                String res = reader.readLine();
+
+                JSONObject json = JSONObject.parse(res);
+
+                target.x = -json.getFloat("x");
+                target.y = -json.getFloat("y");
+
+                bullets = json.getJSONArray("bullets");
+
+                ArrayList<Bullet> tB = new ArrayList<>();
+                for (int i = 0; i < bullets.size(); i++) {
+                    target.bullets.add(new Bullet(-bullets.getJSONObject(i).getFloat("x"), -bullets.getJSONObject(i).getFloat("y")));
+                }
+
+                ship.health = json.getInt("health");
+            } catch (UnknownHostException ex) {
+                System.out.println("Server not found: " + ex.getMessage());
+            } catch (IOException ex) {
+                System.out.println("I/O error: " + ex.getMessage());
+            }
+        }
+    }
+
+    class Drawer extends Thread {
+        public void run() {
+            background(backgroundColor);
+            translate(width/2, height/2);
+
+            ArrayList<Bullet> shipBullets = ship.bullets;
+            ArrayList<Bullet> targetBullets = target.bullets;
+
+            for (int i = 0; i < shipBullets.size(); i++) {
+                if(target.checkHit(target.x, target.y, shipBullets.get(i).x, shipBullets.get(i).y)) ship.bullets.remove(i);
+            }
+
+            for (int i = 0; i < targetBullets.size(); i++) {
+                if(ship.checkHit(ship.x, ship.y, targetBullets.get(i).x, targetBullets.get(i).y)) target.bullets.remove(i);
+            }
+
+            arena.setScore(target.health);
+
+            if (shooting) {
+                ship.shoot();
+                shooting = false;
+            }
+
+            if (ax >= 0.5) ship.move(2);
+            if (ax <= -0.5) ship.move(-2);
+        }
+    }
+
     Arena arena;
     Ship ship;
     Ship target;
+
+    Bullet bulletNew;
 
     int backgroundColor = 152;
 
@@ -45,7 +128,11 @@ public class OrbitCombat extends PApplet {
 
     int port = 6868;
 
+    JSONObject shipInfo = new JSONObject();
+    JSONObject opponentInfo = new JSONObject();
+
     InetAddress serverAddress = null;
+    Socket socket;
 
     class AccelerometerListener implements SensorEventListener {
         public void onSensorChanged(SensorEvent event) {
@@ -53,8 +140,7 @@ public class OrbitCombat extends PApplet {
             ay = event.values[1];
             az = event.values[2];
         }
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        }
+        public void onAccuracyChanged(Sensor sensor, int accuracy) { }
     }
 
     public void onResume() {
@@ -85,56 +171,31 @@ public class OrbitCombat extends PApplet {
         manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME);
 
         try {
-            serverAddress = InetAddress.getByAddress(new byte[]{(byte) 10, (byte) 42, (byte) 0, (byte) 1});
+            textAlign(CENTER, CENTER);
+            textSize((float) (width*0.2));
+            text("Waiting...", width/2, height/2);
+
+            serverAddress = InetAddress.getByName("192.168.1.100");
+            socket = new Socket(serverAddress, port);
         } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void draw() {
-        background(backgroundColor);
-        translate(width/2, height/2);
+        new DataExchanger().run();
+        new Drawer().run();
+
         arena.show();
         ship.show();
         target.show();
-
-        arena.setScore(target.health);
-
-        if (shooting) {
-            ship.shoot();
-            shooting = false;
-        }
-
-        if (ax >= 0.5) ship.move(2);
-        if (ax <= -0.5) ship.move(-2);
-
-        target.shoot();
-
-        ArrayList<Ship.Bullet> shipBullets = ship.bullets;
-        for (int i = 0; i < shipBullets.size(); i++) {
-            if(target.checkHit(target.x, target.y, shipBullets.get(i).x, shipBullets.get(i).y)) ship.bullets.remove(i);
-        }
-
-        ArrayList<Ship.Bullet> targetBullets = target.bullets;
-        for (int i = 0; i < targetBullets.size(); i++) {
-            if(ship.checkHit(ship.x, ship.y, targetBullets.get(i).x, targetBullets.get(i).y)) target.bullets.remove(i);
-        }
-
-        try (Socket socket = new Socket(serverAddress, port)) {
-            OutputStream output = socket.getOutputStream();
-            PrintWriter writer = new PrintWriter(output, true);
-
-            writer.println(ship.x + " " + ship.y);
-
-        } catch (UnknownHostException ex) {
-            System.out.println("Server not found: " + ex.getMessage());
-        } catch (IOException ex) {
-            System.out.println("I/O error: " + ex.getMessage());
-        }
     }
 
     public void touchStarted() {
         shooting = true;
+        bulletNew = new Bullet(ship.x, ship.y);
     }
 
     public void touchEnded() {
@@ -170,6 +231,38 @@ public class OrbitCombat extends PApplet {
         }
     }
 
+    class Bullet {
+        public float x;
+        public float y;
+
+        private float speedX;
+        private float speedY;
+
+        private float bulletSpeed = 20;
+
+        Bullet(float x, float y) {
+            this.x = x;
+            this.y = y;
+
+            this.speedX = (-this.x)/bulletSpeed;
+            this.speedY = (-this.y)/bulletSpeed;
+        }
+
+        public void show() {
+            strokeWeight(1);
+            circle(this.x, this.y, (float) (arena.R*0.05f));
+
+            this.x += this.speedX;
+            this.y += this.speedY;
+        }
+
+        public boolean checkSelfDestruct() {
+            if (this.x < -width/2 || this.x > width/2 || this.y < -height/2 || this.y > height) {
+                return true;
+            }
+            return false;
+        }
+    }
 
     class Ship {
         public float x;
@@ -237,39 +330,6 @@ public class OrbitCombat extends PApplet {
             {
                 this.y = -tempY;
                 this.x = -tempX;
-            }
-        }
-
-        class Bullet {
-            public float x;
-            public float y;
-
-            private float speedX;
-            private float speedY;
-
-            private float bulletSpeed = 20;
-
-            Bullet(float x, float y) {
-                this.x = x;
-                this.y = y;
-
-                this.speedX = (-this.x)/bulletSpeed;
-                this.speedY = (-this.y)/bulletSpeed;
-            }
-
-            public void show() {
-                strokeWeight(1);
-                circle(this.x, this.y, (float) (R*0.05f));
-
-                this.x += this.speedX;
-                this.y += this.speedY;
-            }
-
-            public boolean checkSelfDestruct() {
-                if (this.x < -width/2 || this.x > width/2 || this.y < -height/2 || this.y > height) {
-                    return true;
-                }
-                return false;
             }
         }
 

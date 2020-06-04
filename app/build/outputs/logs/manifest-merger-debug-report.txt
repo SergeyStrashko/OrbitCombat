@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
-INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
-INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
-INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
+INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
+INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
+INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
 MERGED from [com.android.support:design:28.0.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/1c4fd9a4c3095b679bed23a46e0bcf6c/design-28.0.0/AndroidManifest.xml:17:1-24:12
 MERGED from [com.android.support:appcompat-v7:28.0.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/aaffe2c7f23d715ca045db9d0a51d031/appcompat-v7-28.0.0/AndroidManifest.xml:17:1-22:12
 MERGED from [com.google.android.support:wearable:2.4.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/f78dfabde9abb8e5dfed0d32755adaab/wearable-2.4.0/AndroidManifest.xml:2:1-15:12
@@ -38,9 +38,9 @@ MERGED from [com.android.support:interpolator:28.0.0] /home/sergol/.gradle/cache
 MERGED from [android.arch.lifecycle:livedata:1.1.1] /home/sergol/.gradle/caches/transforms-2/files-2.1/f33d666ad8cee70ee4e661f9bad8e372/livedata-1.1.1/AndroidManifest.xml:17:1-22:12
 MERGED from [android.arch.lifecycle:livedata-core:1.1.1] /home/sergol/.gradle/caches/transforms-2/files-2.1/85526c118dcfe3eae0cf402e2cecc572/livedata-core-1.1.1/AndroidManifest.xml:17:1-22:12
 MERGED from [android.arch.core:runtime:1.1.1] /home/sergol/.gradle/caches/transforms-2/files-2.1/5853616defd81755613306a8befefe63/runtime-1.1.1/AndroidManifest.xml:17:1-22:12
-INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
-INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
-INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-12:12
+INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
+INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
+INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:1-14:12
 	package
 		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:2:120-157
 		INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml
@@ -139,8 +139,12 @@ INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidMa
 		INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml
 		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:3:5-46
 		INJECTED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml
+uses-permission#android.permission.INTERNET
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:4:5-67
+	android:name
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:4:22-64
 application
-ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:4:5-11:19
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:6:5-13:19
 MERGED from [com.android.support:design:28.0.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/1c4fd9a4c3095b679bed23a46e0bcf6c/design-28.0.0/AndroidManifest.xml:22:5-20
 MERGED from [com.android.support:design:28.0.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/1c4fd9a4c3095b679bed23a46e0bcf6c/design-28.0.0/AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.support:wearable:2.4.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/f78dfabde9abb8e5dfed0d32755adaab/wearable-2.4.0/AndroidManifest.xml:9:5-13:19
@@ -158,25 +162,25 @@ MERGED from [com.android.support:versionedparcelable:28.0.0] /home/sergol/.gradl
 	android:appComponentFactory
 		ADDED from [com.android.support:support-compat:28.0.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/4e7b3bbed8e6e29e2ba6d4fc6e8eccff/support-compat-28.0.0/AndroidManifest.xml:22:18-91
 	android:label
-		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:4:53-80
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:6:53-80
 	android:icon
-		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:4:18-52
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:6:18-52
 activity#processing.test.orbitcombat.MainActivity
-ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:5:9-10:20
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:7:9-12:20
 	android:theme
-		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:5:48-115
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:7:48-115
 	android:name
-		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:5:19-47
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:7:19-47
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:6:13-9:29
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:8:13-11:29
 action#android.intent.action.MAIN
-ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:7:17-68
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:9:17-68
 	android:name
-		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:7:25-66
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:9:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:8:17-76
+ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:10:17-76
 	android:name
-		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:8:27-74
+		ADDED from /home/sergol/sketchbook/OrbitCombat/android/app/src/main/AndroidManifest.xml:10:27-74
 uses-library#com.google.android.wearable
 ADDED from [com.google.android.support:wearable:2.4.0] /home/sergol/.gradle/caches/transforms-2/files-2.1/f78dfabde9abb8e5dfed0d32755adaab/wearable-2.4.0/AndroidManifest.xml:10:9-12:40
 	android:required
